@@ -1,0 +1,71 @@
+# A modified version of this file: https://github.com/reviewdog/action-flake8/blob/master/action.yml
+name: "Run flake8 with reviewdog"
+description: "🐶 Run flake8 with reviewdog on pull requests to improve code review experience."
+env: # default values
+  PYTHON_VERSION: 3.9.9
+  POETRY_VERSION: 1.3.1
+inputs:
+  workdir:
+    description: "Working directory relative to the root directory."
+    required: false
+    default: "."
+  flake8_args:
+    description: "Additional flake8 arguments."
+    required: false
+    default: ""
+  # Reviewdog related inputs
+  github_token:
+    description: "GITHUB_TOKEN."
+    required: true
+    default: ${{ github.token }}
+  tool_name:
+    description: "Tool name to use for reviewdog reporter."
+    required: false
+    default: "flake8"
+  level:
+    description: "Report level for reviewdog [info, warning, error]."
+    required: false
+    default: "error"
+  reporter:
+    description: "Reporter of reviewdog command [github-pr-check, github-pr-review, github-check]."
+    required: false
+    default: "github-pr-check"
+  filter_mode:
+    description: "Filtering mode for the reviewdog command [added, diff_context, file, nofilter]."
+    required: false
+    default: "added"
+  fail_on_error:
+    description: "Exit code for reviewdog when errors are found [true, false]."
+    required: false
+    default: false
+  reviewdog_flags:
+    description: "Additional reviewdog flags."
+    required: false
+    default: ""
+  changed_files:
+    description: "A list of files that have been changed"
+    required: true
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python and Poetry
+      uses: ./.github/actions/setup-python-poetry
+      with:
+        install-deps: true
+        only-dev-deps: true
+        workdir: ${{ env.workdir }}
+
+    - run: $GITHUB_ACTION_PATH/entrypoint.sh
+      shell: bash
+      env:
+        INPUT_WORKDIR: ${{ inputs.workdir }}
+        INPUT_FLAKE8_ARGS: ${{ inputs.flake8_Args }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_TOOL_NAME: ${{ inputs.tool_name }}
+        INPUT_LEVEL: ${{ inputs.level }}
+        INPUT_REPORTER: ${{ inputs.reporter }}
+        INPUT_FILTER_MODE: ${{ inputs.filter_mode }}
+        INPUT_FAIL_ON_ERROR: ${{ inputs.fail_on_error }}
+        INPUT_REVIEWDOG_FLAGS: ${{ inputs.reviewdog_flags }}
+        CHANGED_FILES: ${{ inputs.changed_files }}

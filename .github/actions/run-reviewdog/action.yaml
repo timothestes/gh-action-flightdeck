@@ -1,0 +1,38 @@
+name: "Run Reviewdog"
+description: "Run a reviewdog step for a given tool"
+
+inputs:
+  tool_name:
+    description: "What is the name of the tool we'll be using?"
+    required: true
+  command_to_run:
+    description: "What command should we run?"
+    required: true
+  workdir:
+    description: "What directory do we need to be in?"
+    required: false
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python and Poetry
+      uses: ./.github/actions/setup-python-poetry
+      with:
+        install-deps: true
+        only-dev-deps: true
+        workdir: ${{ inputs.workdir }}
+
+    - name: Run command
+      run: |
+        echo "Running the following command: ${{ inputs.command_to_run }}"
+        ${{ inputs.command_to_run }}
+      shell: bash
+
+    - name: run reviewdog
+      uses: reviewdog/action-suggester@8f83d27e749053b2029600995c115026a010408e
+      with:
+        fail_on_error: true
+        level: error
+        tool_name: ${{ inputs.tool_name }}
+        filter_mode: nofilter # Report: raise issue regardless

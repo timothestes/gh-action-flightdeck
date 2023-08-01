@@ -1,0 +1,145 @@
+# This workflow runs a series of quality checks on the codebase
+name: Python Quality Checks
+on:
+  workflow_dispatch: # Allow manually triggering the workflow!
+  pull_request:
+    paths:
+      - "data_tools/**.py*"
+      - ".github/**.yaml"
+      - ".github/**.sh"
+
+env:
+  changed_files: ''
+  workdir: data_tools
+
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{ github.ref_type }}-
+    ${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  black:
+    runs-on: ubuntu-20.04
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Get list of changed files
+        id: get-changed-files
+        run: |
+          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
+          echo "changed_files=${changed_files}" >> $GITHUB_ENV
+
+      - name: Debug print changed files
+        run: |
+          echo "Changed files are: ${{ env.changed_files }}"
+
+      - name: Run Reviewdog Black
+        # Only run if there are changed files
+        if: env.changed_files != ''
+        uses: ./.github/actions/run-reviewdog
+        with:
+          tool_name: black
+          workdir: ${{ env.workdir }}
+          command_to_run: cd ${{ env.workdir }} && poetry run black ${{ env.changed_files }}
+
+  isort:
+    runs-on: ubuntu-20.04
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Get list of changed files
+        id: get-changed-files
+        run: |
+          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
+          echo "changed_files=${changed_files}" >> $GITHUB_ENV
+
+      - name: Debug print changed files
+        run: |
+          echo "Changed files are: ${{ env.changed_files }}"
+
+      - name: Run Reviewdog Isort
+        # Only run if there are changed files
+        if: env.changed_files != ''
+        uses: ./.github/actions/run-reviewdog
+        with:
+          tool_name: isort
+          workdir: ${{ env.workdir }}
+          command_to_run: cd ${{ env.workdir }} && poetry run isort ${{ env.changed_files }}
+
+  mypy:
+    runs-on: ubuntu-20.04
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Get list of changed files
+        id: get-changed-files
+        run: |
+          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
+          echo "changed_files=${changed_files}" >> $GITHUB_ENV
+
+      - name: Debug print changed files
+        run: |
+          echo "Changed files are: ${{ env.changed_files }}"
+
+      - name: Run Reviewdog MyPy
+        # Only run if there are changed files
+        if: env.changed_files != ''
+        uses: ./.github/actions/run-reviewdog-mypy
+        with:
+          fail_on_error: false # the thing that will fail is the 'report', not this action
+          filter_mode: nofilter # sometimes the report will filter out the errors, disabling filters...
+          execute_command: poetry run mypy --install-types --non-interactive --check-untyped-defs --ignore-missing-imports --follow-imports=silent
+          level: error
+          reporter: github-pr-check
+          # mypy needs root dependencies AND dev dependencies...
+          setup_command: poetry install --with dev
+          setup_method: install
+          workdir: data_tools
+
+  flake8:
+    runs-on: ubuntu-20.04
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Get list of changed files
+        id: get-changed-files
+        run: |
+          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
+          echo "changed_files=${changed_files}" >> $GITHUB_ENV
+
+      - name: Debug print changed files
+        run: |
+          echo "Changed files are: ${{ env.changed_files }}"
+
+      - name: Run Reviewdog Flake8
+        # Only run if there are changed files
+        if: env.changed_files != '' 
+        uses: ./.github/actions/run-reviewdog-flake8
+        with:
+          workdir: ${{ env.workdir }}
+          changed_files: ${{ env.changed_files }}
+          filter_mode: nofilter # Report: raise issue regardless
+
+# if we want to add pylint as a step, here's the command we would need to run:
+# cd ${{ env.workdir }} && poetry run pylint --rcfile tests/.pylintrc ${{ env.workdir }}
