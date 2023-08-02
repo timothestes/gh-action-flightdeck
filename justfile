@@ -3,13 +3,10 @@ set dotenv-load
 # allow positional-arguments
 set positional-arguments
 
-tbd:
-    printenv FOO
-
 list_all:
     act -l
 @run test_name:
-    act -j $1
+    act -s GITHUB_TOKEN="$(gh auth token)" -j $1 
 
 python:
   #!/usr/bin/env python3

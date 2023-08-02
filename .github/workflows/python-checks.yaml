@@ -11,6 +11,7 @@ on:
 env:
   changed_files: ''
   workdir: data_tools
+  main_branch: main
 
 concurrency:
   group: >-
@@ -32,7 +33,7 @@ jobs:
       - name: Get list of changed files
         id: get-changed-files
         run: |
-          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
+          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py" ${{env.main_branch}})
           echo "changed_files=${changed_files}" >> $GITHUB_ENV
 
       - name: Debug print changed files
@@ -58,10 +59,15 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
 
+      - name: See if GH TOKEN is there
+        run: |
+          echo "GH TOKEN is ${{ secrets.GITHUB_TOKEN }}"
+          echo "GH ENV is ${{ env.GITHUB_TOKEN }}"
+          
       - name: Get list of changed files
         id: get-changed-files
         run: |
-          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
+          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py" ${{env.main_branch}})
           echo "changed_files=${changed_files}" >> $GITHUB_ENV
 
       - name: Debug print changed files
@@ -90,7 +96,7 @@ jobs:
       - name: Get list of changed files
         id: get-changed-files
         run: |
-          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
+          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py" ${{env.main_branch}})
           echo "changed_files=${changed_files}" >> $GITHUB_ENV
 
       - name: Debug print changed files
@@ -125,7 +131,7 @@ jobs:
       - name: Get list of changed files
         id: get-changed-files
         run: |
-          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
+          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py" ${{env.main_branch}})
           echo "changed_files=${changed_files}" >> $GITHUB_ENV
 
       - name: Debug print changed files
