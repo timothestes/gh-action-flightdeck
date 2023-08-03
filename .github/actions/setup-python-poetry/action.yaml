@@ -1,9 +1,6 @@
 name: "Install Python and Poetry"
 description: "Setup Python and Poetry"
 
-env:
-  POETRY_VERSION: 1.3.1
-
 inputs:
   workdir:
     description: "The working directory"
@@ -33,8 +30,21 @@ runs:
   steps:
     - name: Set Poetry Version
       run: |
-        if [ -f ${{ inputs.workdir }}/.poetry-version ]; then
-          echo "POETRY_VERSION=$(cat ${{ inputs.workdir }}/.poetry-version)" >> $GITHUB_ENV
+        if [ -f .poetry-version ]; then
+          echo "POETRY_VERSION=$(cat .poetry-version)" >> $GITHUB_ENV
+        else
+          echo ".poetry-version file not found. Aborting." >&2
+          exit 1
+        fi
+      shell: bash
+
+    - name: Check .python-version file
+      run: |
+        if [ -f .python-version ]; then
+          echo "PYTHON_VERSION=$(cat .python-version)" >> $GITHUB_ENV
+        else
+          echo ".python-version file not found. Aborting." >&2
+          exit 1
         fi
       shell: bash
 
