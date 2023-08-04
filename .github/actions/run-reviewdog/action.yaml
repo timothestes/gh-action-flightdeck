@@ -29,8 +29,19 @@ runs:
         ${{ inputs.command_to_run }}
       shell: bash
 
-    # TODO: test if we can raise locally
+    - name: run reviewdog (local)
+      # local reviewdog needs the `local` reporter
+      if: ${{ env.ACT }}
+      uses: reviewdog/action-suggester@8f83d27e749053b2029600995c115026a010408e
+      with:
+        fail_on_error: true
+        level: error
+        tool_name: ${{ inputs.tool_name }}
+        filter_mode: nofilter # Report: raise issue regardless
+        reviewdog_flags: "-reporter local"
+
     - name: run reviewdog
+      if: ${{ !env.ACT }}
       uses: reviewdog/action-suggester@8f83d27e749053b2029600995c115026a010408e
       with:
         fail_on_error: true
