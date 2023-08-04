@@ -87,8 +87,10 @@ runs:
       if: ${{ steps.cached-poetry-dependencies.outputs.cache-hit != 'true' && inputs.install-deps == 'true' && inputs.only-dev-deps == 'true' }}
       # Only installs dev dependencies
       run: cd ${{ inputs.workdir }} && poetry install --only dev --no-interaction
+      shell: bash
       # OR
     - name: Install dependencies (regular AND dev dependencies)
       if: ${{ steps.cached-poetry-dependencies.outputs.cache-hit != 'true' && inputs.install-deps == 'true' && inputs.only-dev-deps == 'false' }}
       # Installs regular dependencies AND dev dependencies
       run: cd ${{ inputs.workdir }} && poetry install --no-interaction
+      shell: bash
