@@ -97,7 +97,7 @@ runs:
       uses: ./.github/actions/setup-python-poetry
       with:
         install-deps: false
-        cache: false
+        cache-deps: false
         workdir: ${{ inputs.workdir }}
 
     - run: $GITHUB_ACTION_PATH/entrypoint.sh

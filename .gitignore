@@ -1,3 +1,6 @@
 .DS_Store
 .env
 .vscode
+
+# Netskope certs
+ca-certificates/nscacert.pem

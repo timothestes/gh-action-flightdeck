@@ -1,9 +1,6 @@
 name: "Install Python and Poetry"
 description: "Setup Python and Poetry"
 
-env:
-  POETRY_VERSION: 1.3.1
-
 inputs:
   workdir:
     description: "The working directory"
@@ -17,7 +14,7 @@ inputs:
     description: "Should the action only install the dev dependencies?"
     required: false
     default: false
-  cache:
+  cache-deps:
     description: "Should the action try to cache the poetry dependencies?"
     required: false
     default: true
@@ -26,50 +23,74 @@ outputs:
   python-version:
     description: "The installed Python version"
     # works for cache OR non-cached step!
-    value: ${{ steps.setup_python_no_cache.outputs.python-version || steps.setup_python_cache.outputs.python-version }}
+    value: ${{ steps.setup_python.outputs.python-version }}
 
 runs:
   using: "composite"
   steps:
     - name: Set Poetry Version
       run: |
-        if [ -f ${{ inputs.workdir }}/.poetry-version ]; then
+        if [ -f .poetry-version ]; then
           echo "POETRY_VERSION=$(cat ${{ inputs.workdir }}/.poetry-version)" >> $GITHUB_ENV
+        else
+          echo ".poetry-version file not found. Aborting." >&2
+          exit 1
         fi
       shell: bash
 
-    - name: Install Poetry ${{ env.POETRY_VERSION }}
+    - name: Check .python-version file
       run: |
-        curl -sSL ${{ env.POETRY_URL }} | \
-          python - --version ${{ env.POETRY_VERSION }}
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        if [ -f .python-version ]; then
+          echo "PYTHON_VERSION=$(cat ${{ inputs.workdir }}/.python-version)" >> $GITHUB_ENV
+        else
+          echo ".python-version file not found. Aborting." >&2
+          exit 1
+        fi
       shell: bash
-      env:
-        POETRY_URL: https://install.python-poetry.org
 
-    - name: Set up Python ${{ inputs.python-version }} (cache)
-      if: ${{ inputs.cache == 'true' }}
-      id: setup_python_cache
-      uses: actions/setup-python@v4
-      with:
-        python-version-file: "${{ inputs.workdir }}/.python-version"
-        cache: "poetry" # This line enables caching for Python dependencies that are managed by Poetry, speeding up build times
-
-    - name: Set up Python ${{ inputs.python-version }} (no-cache)
-      if: ${{ inputs.cache == 'false' }}
-      id: setup_python_no_cache
+    - name: Set up Python ${{ inputs.python-version }}
+      id: setup_python
       uses: actions/setup-python@v4
       with:
         python-version-file: "${{ inputs.workdir }}/.python-version"
 
-    - name: Install Dev Dependencies
+    - name: Load cached Poetry installation
+      id: cached-poetry
+      # caching poetry installation doesn't work when using ACT for some reason...
+      if: ${{ !env.ACT }}
+      uses: actions/cache@v3
+      with:
+        path: ~/.local # the path depends on the OS
+        key: poetry-0 # increment to reset cache
+
+    - name: Install and configure Poetry
+      if: steps.cached-poetry.outputs.cache-hit != 'true'
+      # TODO: use hashed version of snok/install-poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+        virtualenvs-create: true
+        virtualenvs-in-project: false
+        installer-parallel: true
+
+    # load cache if cache exists (and inputs.cache-deps is true)
+    - name: Load cached venv
+      if: ${{ inputs.cache-deps == 'true' }}
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    # if there are no cache hits, then we have to install the deps
+    - name: Install dependencies (dev dependencies)
+      if: ${{ steps.cached-poetry-dependencies.outputs.cache-hit != 'true' && inputs.install-deps == 'true' && inputs.only-dev-deps == 'true' }}
       # Only installs dev dependencies
-      if: ${{ inputs.install-deps == 'true' && inputs.only-dev-deps == 'true'}}
-      run: cd ${{ inputs.workdir }} && poetry install --only dev
+      run: cd ${{ inputs.workdir }} && poetry install --only dev --no-interaction
       shell: bash
-
-    - name: Install Project Dependencies
+      # OR
+    - name: Install dependencies (regular AND dev dependencies)
+      if: ${{ steps.cached-poetry-dependencies.outputs.cache-hit != 'true' && inputs.install-deps == 'true' && inputs.only-dev-deps == 'false' }}
       # Installs regular dependencies AND dev dependencies
-      if: ${{ inputs.install-deps == 'true' && inputs.only-dev-deps == 'false'}}
-      run: cd ${{ inputs.workdir }} && poetry install
+      run: cd ${{ inputs.workdir }} && poetry install --no-interaction
       shell: bash

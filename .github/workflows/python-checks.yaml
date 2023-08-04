@@ -1,16 +1,18 @@
 # This workflow runs a series of quality checks on the codebase
 name: Python Quality Checks
 on:
-  workflow_dispatch: # Allow manually triggering the workflow!
+  workflow_dispatch: # Allow manually triggering the workflow
   pull_request:
+    # only trigger when these files are changed
     paths:
-      - "data_tools/**.py*"
+      - "**.py*"
       - ".github/**.yaml"
       - ".github/**.sh"
 
 env:
   changed_files: ''
-  workdir: data_tools
+  workdir: .   # set this value to the directory that contains your pyproject.toml, .poetry-version, and .python-version files.
+  main_branch: main
 
 concurrency:
   group: >-
@@ -32,8 +34,9 @@ jobs:
       - name: Get list of changed files
         id: get-changed-files
         run: |
-          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
-          echo "changed_files=${changed_files}" >> $GITHUB_ENV
+          echo "changed_files=$(bash .github/workflows/get-changed-files.sh \
+          "${{ env.workdir }}" ".py" ${{env.main_branch}} \
+          ${{ github.repository }})" >> $GITHUB_ENV
 
       - name: Debug print changed files
         run: |
@@ -61,8 +64,9 @@ jobs:
       - name: Get list of changed files
         id: get-changed-files
         run: |
-          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
-          echo "changed_files=${changed_files}" >> $GITHUB_ENV
+          echo "changed_files=$(bash .github/workflows/get-changed-files.sh \
+          "${{ env.workdir }}" ".py" ${{env.main_branch}} \
+          ${{ github.repository }})" >> $GITHUB_ENV
 
       - name: Debug print changed files
         run: |
@@ -90,8 +94,9 @@ jobs:
       - name: Get list of changed files
         id: get-changed-files
         run: |
-          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
-          echo "changed_files=${changed_files}" >> $GITHUB_ENV
+          echo "changed_files=$(bash .github/workflows/get-changed-files.sh \
+          "${{ env.workdir }}" ".py" ${{env.main_branch}} \
+          ${{ github.repositoryUrl }})" >> $GITHUB_ENV
 
       - name: Debug print changed files
         run: |
@@ -110,7 +115,7 @@ jobs:
           # mypy needs root dependencies AND dev dependencies...
           setup_command: poetry install --with dev
           setup_method: install
-          workdir: data_tools
+          workdir: ${{ env.workdir }}
 
   flake8:
     runs-on: ubuntu-20.04
@@ -125,8 +130,9 @@ jobs:
       - name: Get list of changed files
         id: get-changed-files
         run: |
-          changed_files=$(bash .github/workflows/get-changed-files.sh "${{ env.workdir }}" ".py")
-          echo "changed_files=${changed_files}" >> $GITHUB_ENV
+          echo "changed_files=$(bash .github/workflows/get-changed-files.sh \
+          "${{ env.workdir }}" ".py" ${{env.main_branch}} \
+          ${{ github.repositoryUrl }})" >> $GITHUB_ENV
 
       - name: Debug print changed files
         run: |
