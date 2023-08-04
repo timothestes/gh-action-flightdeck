@@ -6,6 +6,7 @@ authors = ["Tim Estes <timothestes@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "~3.11"
+black = "^23.7.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.12.0"

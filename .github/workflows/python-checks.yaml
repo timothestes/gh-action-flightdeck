@@ -36,7 +36,7 @@ jobs:
         run: |
           echo "changed_files=$(bash .github/workflows/get-changed-files.sh \
           "${{ env.workdir }}" ".py" ${{env.main_branch}} \
-          ${{ github.repositoryUrl }})" >> $GITHUB_ENV
+          ${{ github.repository }})" >> $GITHUB_ENV
 
       - name: Debug print changed files
         run: |
