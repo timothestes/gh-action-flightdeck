@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "gh-action-flightdeck"
+version = "0.0.1"
+description = "Flightdeck for GH Actions"
+authors = ["Tim Estes <timothestes@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "~3.11"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.12.0"
+
